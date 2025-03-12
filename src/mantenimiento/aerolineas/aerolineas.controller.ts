@@ -1,6 +1,6 @@
 // src/mantenimiento/aerolineas/aerolineas.controller.ts (parcial)
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { AerolineasService } from './aerolineas/aerolineas.service';
+import { AerolineasService } from './aerolineas.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
