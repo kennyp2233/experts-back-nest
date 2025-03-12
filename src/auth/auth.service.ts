@@ -1,4 +1,3 @@
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -6,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RolesService } from '../usuarios/roles.service';
 
 @Injectable()
 export class AuthService {
@@ -13,30 +13,49 @@ export class AuthService {
         private prisma: PrismaService,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private rolesService: RolesService,
     ) { }
 
     async login(loginDto: LoginDto) {
         const { usuario, pass, recordar } = loginDto;
 
-        // Find user by username or email
+        // Buscar usuario por nombre o email
         const user = await this.getUserByUsernameOrEmail(usuario);
 
         if (!user) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // Verify password
+        // Verificar contraseña
         const isPasswordValid = await bcrypt.compare(pass, user.pass);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // Get user roles
-        const roles = await this.getUserRoles(user.id_usuario);
+        // Obtener roles actuales del usuario
+        const roles = await this.rolesService.getUserRoles(user.id_usuario);
 
-        // Generate tokens
-        const accessToken = this.generateAccessToken(user.id_usuario, roles);
-        const refreshToken = this.generateRefreshToken(user.id_usuario, recordar);
+        // Generar tokens
+        const accessToken = this.jwtService.sign(
+            {
+                id_usuario: user.id_usuario,
+                roles,
+            },
+            {
+                secret: this.configService.get<string>('SECRET_KEY'),
+                expiresIn: '15m',
+            },
+        );
+
+        const refreshToken = this.jwtService.sign(
+            {
+                id_usuario: user.id_usuario,
+            },
+            {
+                secret: this.configService.get<string>('SECRET_REFRESH_KEY'),
+                expiresIn: recordar ? '7d' : '1h',
+            },
+        );
 
         return {
             accessToken,
@@ -47,7 +66,7 @@ export class AuthService {
     async register(registerDto: RegisterDto) {
         const { usuario, email, pass, selectedRole, ...additionalData } = registerDto;
 
-        // Validate inputs
+        // Validaciones
         if (!email || !usuario || !pass) {
             throw new BadRequestException('Faltan datos');
         }
@@ -64,7 +83,11 @@ export class AuthService {
             throw new BadRequestException('El usuario no puede contener espacios');
         }
 
-        // Check for existing user
+        if (!this.isEmail(email)) {
+            throw new BadRequestException('El email no es válido');
+        }
+
+        // Verificar usuario existente
         const existingUser = await this.prisma.usuario.findFirst({
             where: {
                 OR: [
@@ -78,15 +101,15 @@ export class AuthService {
             throw new BadRequestException('El usuario o correo ya existe');
         }
 
-        // Create transaction
+        // Transacción para crear usuario y roles
         return this.prisma.$transaction(async (prisma) => {
-            // Hash password
+            // Hash de contraseña
             const hashedPassword = await bcrypt.hash(
                 pass,
                 Number(this.configService.get<string>('BY_SALT') || '10')
             );
 
-            // Create user
+            // Crear usuario
             const newUser = await prisma.usuario.create({
                 data: {
                     usuario,
@@ -95,14 +118,14 @@ export class AuthService {
                 },
             });
 
-            // Assign pending role
+            // Asignar rol pendiente
             await prisma.pendienteRol.create({
                 data: {
                     id_usuario: newUser.id_usuario,
                 },
             });
 
-            // Assign specific role
+            // Asignar rol específico según selección
             if (selectedRole === 'cliente') {
                 await prisma.clienteRol.create({
                     data: {
@@ -127,12 +150,14 @@ export class AuthService {
 
     async refreshToken(token: string) {
         try {
-            const payload = this.jwtService.verify(
-                token,
-                { secret: this.configService.get<string>('SECRET_REFRESH_KEY') }
-            );
+            // Verificar token de refresco
+            const payload = this.jwtService.verify(token, {
+                secret: this.configService.get<string>('SECRET_REFRESH_KEY'),
+            });
 
             const { id_usuario } = payload;
+
+            // Verificar que el usuario existe
             const user = await this.prisma.usuario.findUnique({
                 where: { id_usuario },
             });
@@ -141,21 +166,36 @@ export class AuthService {
                 throw new UnauthorizedException('Usuario no válido');
             }
 
-            const roles = await this.getUserRoles(id_usuario);
+            // Obtener roles actuales desde BD
+            const roles = await this.rolesService.getUserRoles(id_usuario);
 
-            // Generate new access token
-            const newAccessToken = this.generateAccessToken(id_usuario, roles);
+            // Generar nuevo access token con roles actualizados
+            const accessToken = this.jwtService.sign(
+                {
+                    id_usuario,
+                    roles,
+                },
+                {
+                    secret: this.configService.get<string>('SECRET_KEY'),
+                    expiresIn: '15m',
+                },
+            );
 
             return {
-                accessToken: newAccessToken,
+                accessToken,
             };
         } catch (error) {
-            throw new UnauthorizedException('Token de refresco inválido');
+            throw new UnauthorizedException('Token de refresco inválido o expirado');
         }
     }
 
-    async getUserByUsernameOrEmail(identifier: string) {
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    decodeToken(token: string) {
+        return this.jwtService.decode(token);
+    }
+
+    // Métodos auxiliares
+    private async getUserByUsernameOrEmail(identifier: string) {
+        const isEmail = this.isEmail(identifier);
 
         return this.prisma.usuario.findFirst({
             where: isEmail
@@ -164,55 +204,8 @@ export class AuthService {
         });
     }
 
-    async getUserRoles(userId: string): Promise<string[]> {
-        const roles = [];
-
-        // Check each role model
-        const admin = await this.prisma.admin.findUnique({
-            where: { id_usuario: userId },
-        });
-        if (admin) roles.push('admin');
-
-        const cliente = await this.prisma.clienteRol.findUnique({
-            where: { id_usuario: userId },
-        });
-        if (cliente) roles.push('cliente');
-
-        const finca = await this.prisma.fincaRol.findUnique({
-            where: { id_usuario: userId },
-        });
-        if (finca) roles.push('finca');
-
-        const pendiente = await this.prisma.pendienteRol.findUnique({
-            where: { id_usuario: userId },
-        });
-        if (pendiente) roles.push('pendiente');
-
-        return roles;
-    }
-
-    private generateAccessToken(userId: string, roles: string[]): string {
-        return this.jwtService.sign(
-            {
-                id_usuario: userId,
-                roles,
-            },
-            {
-                secret: this.configService.get<string>('SECRET_KEY'),
-                expiresIn: '15m',
-            },
-        );
-    }
-
-    private generateRefreshToken(userId: string, rememberMe: boolean): string {
-        return this.jwtService.sign(
-            {
-                id_usuario: userId,
-            },
-            {
-                secret: this.configService.get<string>('SECRET_REFRESH_KEY'),
-                expiresIn: rememberMe ? '7d' : '1h',
-            },
-        );
+    private isEmail(identifier: string): boolean {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(identifier);
     }
 }
