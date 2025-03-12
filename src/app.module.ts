@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module';
+import { CatalogosModule } from './catalogos/catalogos.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -16,6 +17,7 @@ import { AuthRefreshMiddleware } from './auth/middleware/auth-refresh.middleware
     AuthModule,
     UsuariosModule,
     MantenimientoModule,
+    CatalogosModule,
   ],
   providers: [
     {
