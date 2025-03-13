@@ -1,32 +1,38 @@
-// src/common/filters/prisma-exception.filter.ts
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { Response } from 'express';
+// src/common/filters/all-exceptions.filter.ts
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Request, Response } from 'express';
 
-@Catch(Prisma.PrismaClientKnownRequestError)
-export class PrismaExceptionFilter implements ExceptionFilter {
-    catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+    private readonly logger = new Logger(AllExceptionsFilter.name);
+
+    catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
+        const request = ctx.getRequest<Request>();
 
-        let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let message = 'Internal server error';
+        const status =
+            exception instanceof HttpException
+                ? exception.getStatus()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        switch (exception.code) {
-            case 'P2002': // Unique constraint failed
-                status = HttpStatus.CONFLICT;
-                message = 'Unique constraint failed on one or more fields';
-                break;
-            case 'P2025': // Record not found
-                status = HttpStatus.NOT_FOUND;
-                message = 'Record not found';
-                break;
-            // Add more cases as needed
-        }
+        // Registrar el error completo en la consola
+        this.logger.error(`
+      Status: ${status}
+      Path: ${request.url}
+      Method: ${request.method}
+      Error: ${exception.message}
+      Stack: ${exception.stack}
+    `);
 
+        // Respuesta al cliente (más limitada)
         response.status(status).json({
             statusCode: status,
-            message,
+            timestamp: new Date().toISOString(),
+            path: request.url,
+            message: process.env.NODE_ENV === 'production'
+                ? 'Internal server error'
+                : exception.message,
         });
     }
 }

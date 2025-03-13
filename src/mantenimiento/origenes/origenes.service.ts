@@ -102,7 +102,7 @@ export class OrigenesService {
             codigo_origen: data?.codigo_origen,
             nombre: data?.nombre,
             aeropuerto: data?.aeropuerto,
-            id_pais: data?.id_pais || data?.paise?.id_pais,
+            id_pais: data?.id_pais || data?.pais?.id_pais,
             id_cae_aduana: data?.id_cae_aduana || data?.cae_aduana?.id_cae_aduana,
         };
     }

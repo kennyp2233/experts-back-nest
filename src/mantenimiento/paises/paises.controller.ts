@@ -66,4 +66,10 @@ export class PaisesController {
             msg: 'Pais eliminado'
         };
     }
+
+    //paisesJoinAcuerdos
+    @Get('join/acuerdos')
+    async paisesJoinAcuerdos() {
+        return this.paisesService.paisesJoinAcuerdos();
+    }
 }

@@ -3,7 +3,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAerolineaDto } from './dto/create-aerolinea.dto';
 import { UpdateAerolineaDto } from './dto/update-aerolinea.dto';
-import { CreateAerolineaCompletaDto } from './dto/create-aerolinea-completa.dto';
 
 @Injectable()
 export class AerolineasService {

@@ -57,7 +57,7 @@ model Aerolinea {
   pais                String?
   contacto            String?
   id_modo             Int?
-  maestra_guias_hijas Boolean?
+  maestra_guias_hijas Boolean? @default(false)
   codigo              String?
   prefijo_awb         String?
   codigo_cae          String?
@@ -133,9 +133,9 @@ model Pais {
   id_acuerdo  Int?
 
   // Relations
-  acuerdo  AcuerdoArancelario? @relation(fields: [id_acuerdo], references: [id_acuerdo])
-  origenes Origen[]
-  destinos Destino[]
+  acuerdos_arancelario AcuerdoArancelario? @relation(fields: [id_acuerdo], references: [id_acuerdo])
+  origenes             Origen[]
+  destinos             Destino[]
 }
 
 model AcuerdoArancelario {

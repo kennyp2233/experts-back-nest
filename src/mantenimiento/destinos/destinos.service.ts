@@ -97,6 +97,9 @@ export class DestinosService {
             include: {
                 pais: true,
             },
+            orderBy: {
+                codigo_destino: 'asc',
+            },
         });
     }
 
@@ -105,7 +108,7 @@ export class DestinosService {
             codigo_destino: data?.codigo_destino,
             nombre: data?.nombre,
             aeropuerto: data?.aeropuerto,
-            id_pais: data?.id_pais || data?.paise?.id_pais,
+            id_pais: data?.id_pais || data?.pais?.id_pais,
             sesa_id: data?.sesa_id,
             leyenda_fito: data?.leyenda_fito,
             cobro_fitos: data?.cobro_fitos !== undefined ? data.cobro_fitos : false,

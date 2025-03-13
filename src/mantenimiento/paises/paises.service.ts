@@ -25,6 +25,7 @@ export class PaisesService {
     }
 
     async create(createPaisDto: CreatePaisDto | PaisRelacionado) {
+
         const paisData = this.extraerPaisDeData(createPaisDto);
         return this.prisma.pais.create({
             data: paisData,
@@ -77,7 +78,10 @@ export class PaisesService {
     async paisesJoinAcuerdos() {
         return this.prisma.pais.findMany({
             include: {
-                acuerdo: true,
+                acuerdos_arancelario: true,
+            },
+            orderBy: {
+                nombre: 'asc',
             },
         });
     }

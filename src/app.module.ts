@@ -1,3 +1,4 @@
+// src/app.module.ts (actualización)
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -5,10 +6,12 @@ import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
-import { APP_GUARD } from '@nestjs/core';
+import { DocumentosModule } from './documentos/documentos.module'; // Nuevo módulo
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthRefreshMiddleware } from './auth/middleware/auth-refresh.middleware';
+import { AllExceptionsFilter } from './common/filters/prisma-exception.filter';
 
 @Module({
   imports: [
@@ -18,6 +21,7 @@ import { AuthRefreshMiddleware } from './auth/middleware/auth-refresh.middleware
     UsuariosModule,
     MantenimientoModule,
     CatalogosModule,
+    DocumentosModule,
   ],
   providers: [
     {
@@ -27,6 +31,10 @@ import { AuthRefreshMiddleware } from './auth/middleware/auth-refresh.middleware
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })

@@ -1,5 +1,5 @@
 // src/auth/dto/login.dto.ts
-import { IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
     @IsString()
@@ -9,7 +9,7 @@ export class LoginDto {
     @MinLength(6)
     pass: string;
 
-    @IsString()
+    @IsBoolean()
     recordar?: boolean = false;
 }
 
