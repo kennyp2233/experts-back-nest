@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
-@Controller('bodeguero')
+@Controller('bodegueros')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BodeguerosController {
     constructor(private readonly bodeguerosService: BodeguerosService) { }

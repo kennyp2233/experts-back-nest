@@ -3,6 +3,8 @@ import { ProductosService } from './productos.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CreateProductoDto } from './dto/create-producto.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
 
 @Controller('productos')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -11,43 +13,67 @@ export class ProductosController {
 
     @Post()
     @Roles('admin')
-    create(@Body() producto: any) {
-        return this.productosService.create(producto);
+    async create(@Body() producto: CreateProductoDto) {
+        const data = await this.productosService.create(producto);
+        return {
+            ok: true,
+            msg: 'Producto creado exitosamente',
+            data
+        };
     }
 
     @Get()
-    findAll(@Query('id') id?: string) {
+    async findAll(@Query('id') id?: string) {
         if (id) {
-            return this.productosService.findOne(+id);
+            const data = await this.productosService.findOne(+id);
+            return data;
         }
-        return this.productosService.findAll();
+        const data = await this.productosService.findAll();
+        return data;
     }
 
     @Get('productosJoinAll')
-    findAllCompleto() {
-        return this.productosService.findAllCompleto();
+    async findAllCompleto() {
+        const data = await this.productosService.findAllCompleto();
+        return data;
     }
 
     @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.productosService.findOne(id);
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+        const data = await this.productosService.findOne(id);
+        return {
+            ok: true,
+            data
+        };
     }
 
     @Put()
     @Roles('admin')
-    update(@Body() producto: any) {
-        return this.productosService.update(producto);
+    async update(@Body() producto: UpdateProductoDto) {
+        const data = await this.productosService.update(producto);
+        return {
+            ok: true,
+            msg: 'Producto actualizado exitosamente',
+            data
+        };
     }
 
     @Delete(':id')
     @Roles('admin')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.productosService.remove(id);
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        return {
+            ok: true,
+            msg: 'Producto eliminado exitosamente'
+        };
     }
 
     @Delete()
     @Roles('admin')
-    removeMany(@Body() ids: number[]) {
-        return this.productosService.removeMany(ids);
+    async removeMany(@Body() ids: number[]) {
+        await this.productosService.removeMany(ids);
+        return {
+            ok: true,
+            msg: 'Productos eliminados exitosamente'
+        };
     }
 }

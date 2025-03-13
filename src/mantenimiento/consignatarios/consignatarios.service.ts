@@ -159,7 +159,30 @@ export class ConsignatariosService {
                     },
                 });
 
-                return this.findOne(newConsignatario.id_consignatario);
+                return prisma.consignatario.findUnique({
+                    where: { id_consignatario: newConsignatario.id_consignatario },
+                    include: {
+                        cae_sice: {
+                            include: {
+                                tipoDocConsignee: true,
+                                tipoDocNotify: true,
+                                tipoDocHawb: true,
+                            },
+                        },
+                        facturacion: true,
+                        fito: true,
+                        guia_h: true,
+                        guia_m: {
+                            include: {
+                                destino: true,
+                            },
+                        },
+                        transmision: true,
+                        embarcador: true,
+                        cliente: true,
+                    },
+                });
+
             } catch (error) {
                 throw error;
             }

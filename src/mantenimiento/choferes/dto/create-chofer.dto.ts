@@ -20,6 +20,7 @@ export class CreateChoferDto {
   @IsOptional()
   camion?: string;
 
+  @IsOptional()
   @IsBoolean()
   estado_chofer: boolean;
 }

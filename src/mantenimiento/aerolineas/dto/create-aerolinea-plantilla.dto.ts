@@ -98,4 +98,3 @@ export class CreateAerolineaPlantillaDto {
     @IsOptional()
     iva_valor?: number;
 }
-

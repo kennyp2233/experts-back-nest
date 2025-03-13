@@ -27,22 +27,20 @@ export class ConsignatariosController {
         return this.consignatariosService.findAll();
     }
 
-    @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.consignatariosService.findOne(id);
-    }
 
     @Post()
     @Roles('admin')
-    create(@Body() createConsignatarioDto: CreateConsignatarioDto) {
-        return this.consignatariosService.create(createConsignatarioDto);
+    async create(@Body() createConsignatarioDto: CreateConsignatarioDto) {
+        await this.consignatariosService.create(createConsignatarioDto);
+        return { ok: true, message: 'Consignatario creado' };
     }
 
     @Put()
     @Roles('admin')
-    update(@Body() updateConsignatarioDto: UpdateConsignatarioDto) {
+    async update(@Body() updateConsignatarioDto: UpdateConsignatarioDto) {
         const id = updateConsignatarioDto.id_consignatario;
-        return this.consignatariosService.update(id, updateConsignatarioDto);
+        await this.consignatariosService.update(id, updateConsignatarioDto);
+        return { ok: true, message: 'Consignatario actualizado' };
     }
 
     @Delete()

@@ -1,10 +1,14 @@
 // src/mantenimiento/aerolineas/aerolineas.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { AerolineasService } from './aerolineas.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { ApiResponse } from 'src/common/interfaces/api-response.interface';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { ApiResponse } from '../../common/interfaces/api-response.interface';
+import { CreateAerolineaDto } from './dto/create-aerolinea.dto';
+import { UpdateAerolineaDto } from './dto/update-aerolinea.dto';
+import { CreateAerolineaCompletaDto } from './dto/create-aerolinea-completa.dto';
+import { UpdateAerolineaCompletaDto } from './dto/update-aerolinea-completa.dto';
 
 @Controller('aerolineas')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -18,6 +22,8 @@ export class AerolineasController {
         return data;
     }
 
+
+
     @Get('joinAll')
     async findAllComplete() {
         const data = await this.aerolineasService.findAllComplete();
@@ -25,7 +31,7 @@ export class AerolineasController {
     }
 
     @Post()
-    async create(@Body() createAerolineaDto: any): Promise<ApiResponse> {
+    async create(@Body() createAerolineaDto: CreateAerolineaDto): Promise<ApiResponse> {
         const data = await this.aerolineasService.create(createAerolineaDto);
         return {
             ok: true,
@@ -35,7 +41,7 @@ export class AerolineasController {
     }
 
     @Post('joinAll')
-    async createCompleta(@Body() data: any): Promise<ApiResponse> {
+    async createCompleta(@Body() data: CreateAerolineaCompletaDto): Promise<ApiResponse> {
         const result = await this.aerolineasService.createCompleta(data);
         return {
             ok: true,
@@ -45,7 +51,7 @@ export class AerolineasController {
     }
 
     @Patch()
-    async update(@Body() updateAerolineaDto: any): Promise<ApiResponse> {
+    async update(@Body() updateAerolineaDto: UpdateAerolineaDto): Promise<ApiResponse> {
         const data = await this.aerolineasService.update(
             updateAerolineaDto.id_aerolinea,
             updateAerolineaDto
@@ -58,7 +64,7 @@ export class AerolineasController {
     }
 
     @Patch('joinAll')
-    async updateCompleta(@Body() data: any): Promise<ApiResponse> {
+    async updateCompleta(@Body() data: UpdateAerolineaCompletaDto): Promise<ApiResponse> {
         const result = await this.aerolineasService.updateCompleta(data);
         return {
             ok: true,

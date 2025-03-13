@@ -3,6 +3,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAerolineaDto } from './dto/create-aerolinea.dto';
 import { UpdateAerolineaDto } from './dto/update-aerolinea.dto';
+import { CreateAerolineaCompletaDto } from './dto/create-aerolinea-completa.dto';
+import { UpdateAerolineaCompletaDto } from './dto/update-aerolinea-completa.dto';
 
 @Injectable()
 export class AerolineasService {
@@ -30,9 +32,8 @@ export class AerolineasService {
         });
     }
 
-    // Este método corresponde a tu createAerolineaAndPlantilla
-    async createCompleta(data: any) {
-        // Extraer datos de aerolínea y plantilla usando una lógica similar a tus funciones extract
+    async createCompleta(data: CreateAerolineaCompletaDto) {
+        // Extraer datos de aerolínea y plantilla
         const aerolineaData = this.extractDataToAerolinea(data);
         const plantillaData = this.extractDataToAerolineaPlantilla(data);
 
@@ -67,8 +68,7 @@ export class AerolineasService {
         });
     }
 
-    // Este método corresponde a tu updateAerolineaAndPlantilla
-    async updateCompleta(data: any) {
+    async updateCompleta(data: UpdateAerolineaCompletaDto) {
         const aerolineaData = this.extractDataToAerolinea(data);
         const plantillaData = this.extractDataToAerolineaPlantilla(data);
         const id = data.id_aerolinea;
@@ -111,22 +111,30 @@ export class AerolineasService {
             // Recuperar datos actualizados
             const aerolinea = await prisma.aerolinea.findUnique({
                 where: { id_aerolinea: id },
+                include: {
+                    aerolineas_plantilla: true,
+                }
             });
 
-            const aerolineaPlantilla = await prisma.aerolineasPlantilla.findUnique({
-                where: { id_aerolinea: id },
-            });
-
-            return {
-                aerolinea,
-                aerolineaPlantilla,
-            };
+            return this.formatAerolineaCompleta(aerolinea);
         });
     }
 
-    // Este método corresponde a tu deleteAerolineaAndPlantilla
     async removeCompleta(ids: number[]) {
         return this.prisma.$transaction(async (prisma) => {
+            // Verificar si todas las aerolíneas existen
+            const existingAerolineas = await prisma.aerolinea.findMany({
+                where: {
+                    id_aerolinea: {
+                        in: ids
+                    }
+                }
+            });
+
+            if (existingAerolineas.length !== ids.length) {
+                throw new NotFoundException('Una o más aerolíneas no fueron encontradas');
+            }
+
             // Eliminar plantillas primero por restricciones de clave foránea
             await prisma.aerolineasPlantilla.deleteMany({
                 where: {
@@ -141,11 +149,10 @@ export class AerolineasService {
                 },
             });
 
-            return { success: true };
+            return { success: true, deletedIds: ids };
         });
     }
 
-    // Este método corresponde a tu aerolineaJoinAll
     async findAllComplete() {
         const aerolineas = await this.prisma.aerolinea.findMany({
             include: {
@@ -167,108 +174,106 @@ export class AerolineasService {
             },
         });
 
-        // Mezclar los atributos de plantilla con los de aerolínea, similar a tu código original
-        return aerolineas.map(aerolinea => {
-            const plantillaData = aerolinea.aerolineas_plantilla || {};
-            return {
-                ...aerolinea,
-                ...plantillaData,
-            };
-        });
+        // Mezclar los atributos de plantilla con los de aerolínea para mantener compatibilidad con frontend
+        return aerolineas.map(aerolinea => this.formatAerolineaCompleta(aerolinea));
     }
 
-    // Añadir al AerolineasService
     async removeMany(ids: number[]) {
-        // Aquí implementamos la lógica para eliminar múltiples aerolíneas
-        return this.prisma.$transaction(async (prisma) => {
-            // Primero, verificamos si todas las aerolíneas existen
-            const existingAerolineas = await prisma.aerolinea.findMany({
-                where: {
-                    id_aerolinea: {
-                        in: ids
-                    }
-                }
-            });
-
-            if (existingAerolineas.length !== ids.length) {
-                throw new NotFoundException('Una o más aerolíneas no fueron encontradas');
-            }
-
-            // Eliminar registros en AerolineasPlantillas primero (por restricciones de clave foránea)
-            await prisma.aerolineasPlantilla.deleteMany({
-                where: {
-                    id_aerolinea: {
-                        in: ids
-                    }
-                }
-            });
-
-            // Eliminar las aerolíneas
-            return prisma.aerolinea.deleteMany({
-                where: {
-                    id_aerolinea: {
-                        in: ids
-                    }
-                }
-            });
-        });
+        return this.removeCompleta(ids);
     }
 
     // Funciones auxiliares para extracción de datos
     private extractDataToAerolinea(data: any) {
+        const aerolineaData = data.aerolinea || data;
+
         return {
-            nombre: data?.nombre,
-            ci_ruc: data?.ci_ruc,
-            direccion: data?.direccion,
-            telefono: data?.telefono,
-            email: data?.email,
-            ciudad: data?.ciudad,
-            pais: data?.pais,
-            contacto: data?.contacto,
-            id_modo: data?.modo?.id_modo,
-            maestra_guias_hijas: data?.maestra_guias_hijas,
-            codigo: data?.codigo,
-            prefijo_awb: data?.prefijo_awb,
-            codigo_cae: data?.codigo_cae,
-            estado_activo: data?.estado_activo,
-            from1: data?.origen1?.id_origen,
-            to1: data?.destino1?.id_destino,
-            by1: data?.via1?.id_aerolinea,
-            to2: data?.destino2?.id_destino,
-            by2: data?.via2?.id_aerolinea,
-            to3: data?.destino3?.id_destino,
-            by3: data?.via3?.id_aerolinea,
-            afiliado_cass: data?.afiliado_cass,
-            guias_virtuales: data?.guias_virtuales,
+            nombre: aerolineaData.nombre,
+            ci_ruc: aerolineaData.ci_ruc,
+            direccion: aerolineaData.direccion,
+            telefono: aerolineaData.telefono,
+            email: aerolineaData.email,
+            ciudad: aerolineaData.ciudad,
+            pais: aerolineaData.pais,
+            contacto: aerolineaData.contacto,
+            id_modo: data.modo?.id_modo || aerolineaData.id_modo,
+            maestra_guias_hijas: aerolineaData.maestra_guias_hijas,
+            codigo: aerolineaData.codigo,
+            prefijo_awb: aerolineaData.prefijo_awb,
+            codigo_cae: aerolineaData.codigo_cae,
+            estado_activo: aerolineaData.estado_activo,
+            from1: data.origen1?.id_origen || aerolineaData.from1,
+            to1: data.destino1?.id_destino || aerolineaData.to1,
+            by1: data.via1?.id_aerolinea || aerolineaData.by1,
+            to2: data.destino2?.id_destino || aerolineaData.to2,
+            by2: data.via2?.id_aerolinea || aerolineaData.by2,
+            to3: data.destino3?.id_destino || aerolineaData.to3,
+            by3: data.via3?.id_aerolinea || aerolineaData.by3,
+            afiliado_cass: aerolineaData.afiliado_cass,
+            guias_virtuales: aerolineaData.guias_virtuales,
         };
     }
 
     private extractDataToAerolineaPlantilla(data: any) {
+        const plantillaData = data.aerolinea_plantilla || data;
+
         return {
-            costo_guia_abrv: data?.costo_guia_abrv,
-            combustible_abrv: data?.combustible_abrv,
-            seguridad_abrv: data?.seguridad_abrv,
-            aux_calculo_abrv: data?.aux_calculo_abrv,
-            iva_abrv: data?.iva_abrv,
-            otros_abrv: data?.otros_abrv,
-            aux1_abrv: data?.aux1_abrv,
-            aux2_abrv: data?.aux2_abrv,
-            costo_guia_valor: data?.costo_guia_valor,
-            combustible_valor: data?.combustible_valor,
-            seguridad_valor: data?.seguridad_valor,
-            aux_calculo_valor: data?.aux_calculo_valor,
-            otros_valor: data?.otros_valor,
-            aux1_valor: data?.aux1_valor,
-            aux2_valor: data?.aux2_valor,
-            iva_valor: data?.iva_valor,
-            plantilla_guia_madre: data?.plantilla_guia_madre,
-            plantilla_formato_aerolinea: data?.plantilla_formato_aerolinea,
-            plantilla_reservas: data?.plantilla_reservas,
-            tarifa_rate: data?.tarifa_rate,
-            pca: data?.pca,
-            combustible_mult: data?.multiplicador1?.id_multiplicador,
-            seguridad_mult: data?.multiplicador2?.id_multiplicador,
-            aux_calc_mult: data?.multiplicador3?.id_multiplicador,
+            costo_guia_abrv: plantillaData.costo_guia_abrv,
+            combustible_abrv: plantillaData.combustible_abrv,
+            seguridad_abrv: plantillaData.seguridad_abrv,
+            aux_calculo_abrv: plantillaData.aux_calculo_abrv,
+            iva_abrv: plantillaData.iva_abrv,
+            otros_abrv: plantillaData.otros_abrv,
+            aux1_abrv: plantillaData.aux1_abrv,
+            aux2_abrv: plantillaData.aux2_abrv,
+            costo_guia_valor: plantillaData.costo_guia_valor,
+            combustible_valor: plantillaData.combustible_valor,
+            seguridad_valor: plantillaData.seguridad_valor,
+            aux_calculo_valor: plantillaData.aux_calculo_valor,
+            otros_valor: plantillaData.otros_valor,
+            aux1_valor: plantillaData.aux1_valor,
+            aux2_valor: plantillaData.aux2_valor,
+            iva_valor: plantillaData.iva_valor,
+            plantilla_guia_madre: plantillaData.plantilla_guia_madre,
+            plantilla_formato_aerolinea: plantillaData.plantilla_formato_aerolinea,
+            plantilla_reservas: plantillaData.plantilla_reservas,
+            tarifa_rate: plantillaData.tarifa_rate,
+            pca: plantillaData.pca,
+            combustible_mult: data.multiplicador1?.id_multiplicador || plantillaData.combustible_mult,
+            seguridad_mult: data.multiplicador2?.id_multiplicador || plantillaData.seguridad_mult,
+            aux_calc_mult: data.multiplicador3?.id_multiplicador || plantillaData.aux_calc_mult,
         };
+    }
+
+    // Formatea la aerolínea con sus relaciones para mantener compatibilidad con frontend
+    private formatAerolineaCompleta(aerolinea: any) {
+        if (!aerolinea) return null;
+
+        const result = {
+            ...aerolinea,
+            ...aerolinea.aerolineas_plantilla,
+        };
+
+        // Manejar relaciones
+        if (aerolinea.modo) result.modo = aerolinea.modo;
+        if (aerolinea.origen1) result.origen1 = aerolinea.origen1;
+        if (aerolinea.destino1) result.destino1 = aerolinea.destino1;
+        if (aerolinea.via1) result.via1 = aerolinea.via1;
+        if (aerolinea.destino2) result.destino2 = aerolinea.destino2;
+        if (aerolinea.via2) result.via2 = aerolinea.via2;
+        if (aerolinea.destino3) result.destino3 = aerolinea.destino3;
+        if (aerolinea.via3) result.via3 = aerolinea.via3;
+
+        // Manejar relaciones de la plantilla
+        if (aerolinea.aerolineas_plantilla?.multiplicador1) {
+            result.multiplicador1 = aerolinea.aerolineas_plantilla.multiplicador1;
+        }
+        if (aerolinea.aerolineas_plantilla?.multiplicador2) {
+            result.multiplicador2 = aerolinea.aerolineas_plantilla.multiplicador2;
+        }
+        if (aerolinea.aerolineas_plantilla?.multiplicador3) {
+            result.multiplicador3 = aerolinea.aerolineas_plantilla.multiplicador3;
+        }
+
+        return result;
     }
 }

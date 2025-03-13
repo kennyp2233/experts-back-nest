@@ -1,5 +1,5 @@
 // src/mantenimiento/bodegueros/dto/create-bodeguero.dto.ts
-import { IsString, IsBoolean } from 'class-validator';
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateBodegueroDto {
     @IsString()
@@ -11,6 +11,7 @@ export class CreateBodegueroDto {
     @IsString()
     clave_bodega: string;
 
+    @IsOptional()
     @IsBoolean()
     estado: boolean;
 }

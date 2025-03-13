@@ -232,7 +232,7 @@ model Embarcador {
   pais                   String?
   embarcador_codigo_pais String?
   handling               Float?
-  estado                 Boolean?
+  estado                 Boolean? @default(true)
 
   // Relations
   consignatarios Consignatario[]
@@ -407,13 +407,13 @@ model FincaProducto {
 }
 
 model Chofer {
-  id_chofer       Int     @id @default(autoincrement())
+  id_chofer       Int      @id @default(autoincrement())
   nombre_chofer   String
   ruc_chofer      String
   placas_camion   String?
   telefono_chofer String?
   camion          String?
-  estado_chofer   Boolean
+  estado_chofer   Boolean? @default(true)
 
   // Relations
   fincas_choferes FincaChofer[]
@@ -591,34 +591,34 @@ model AgenciaIata {
 }
 
 model SubAgencia {
-  id_subagencia Int     @id @default(autoincrement())
+  id_subagencia Int      @id @default(autoincrement())
   nombre        String
-  ci_ruc        String
-  direccion     String
-  telefono      String
-  email         String
-  ciudad        String
-  pais          String
-  provincia     String
-  representante String
-  comision      Float
-  estado        Boolean
+  ci_ruc        String?
+  direccion     String?
+  telefono      String?
+  email         String?
+  ciudad        String?
+  pais          String?
+  provincia     String?
+  representante String?
+  comision      Float?
+  estado        Boolean? @default(true)
 }
 
 model FuncionarioAgrocalidad {
-  id_funcionario_agrocalidad Int     @id @default(autoincrement())
+  id_funcionario_agrocalidad Int      @id @default(autoincrement())
   nombre                     String
-  telefono                   String
-  email                      String
-  estado                     Boolean
+  telefono                   String?
+  email                      String?
+  estado                     Boolean? @default(true)
 }
 
 model Bodeguero {
-  id_bodeguero Int     @id @default(autoincrement())
+  id_bodeguero Int      @id @default(autoincrement())
   nombre       String
   ci           String
   clave_bodega String
-  estado       Boolean
+  estado       Boolean? @default(true)
 }
 
 model ValoresAgencia {

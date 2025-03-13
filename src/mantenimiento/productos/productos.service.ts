@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateProductoDto } from './dto/create-producto.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
 
 @Injectable()
 export class ProductosService {
@@ -22,7 +24,7 @@ export class ProductosService {
         return producto;
     }
 
-    async create(productoData: any) {
+    async create(productoData: CreateProductoDto) {
         const transaction = await this.prisma.$transaction(async (prisma) => {
             try {
                 const productoBase = this.extraerProductoDeData(productoData);
@@ -109,7 +111,7 @@ export class ProductosService {
         });
     }
 
-    async update(productoData: any) {
+    async update(productoData: UpdateProductoDto) {
         const id = productoData.id_producto;
         if (!id) {
             throw new NotFoundException('ID de producto no proporcionado');

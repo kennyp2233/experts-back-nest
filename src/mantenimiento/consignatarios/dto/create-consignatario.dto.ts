@@ -13,9 +13,11 @@ export class CreateConsignatarioDto {
     @IsOptional()
     direccion?: string;
 
+    @IsOptional()
     @IsInt()
     id_embarcador: number;
-
+    
+    @IsOptional()
     @IsInt()
     id_cliente: number;
 

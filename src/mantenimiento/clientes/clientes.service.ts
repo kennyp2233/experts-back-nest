@@ -31,11 +31,12 @@ export class ClientesService {
 
     async update(id: number, updateClienteDto: UpdateClienteDto) {
         // Verificar si existe el cliente
+        const { id_clientes, ...rest } = updateClienteDto;
         await this.findOne(id);
 
         return this.prisma.cliente.update({
             where: { id_clientes: id },
-            data: updateClienteDto,
+            data: rest,
         });
     }
 

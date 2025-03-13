@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
@@ -13,8 +13,12 @@ export class ClientesController {
 
     @Post()
     @Roles('admin')
-    create(@Body() createClienteDto: CreateClienteDto) {
-        return this.clientesService.create(createClienteDto);
+    async create(@Body() createClienteDto: CreateClienteDto) {
+        await this.clientesService.create(createClienteDto);
+        return {
+            ok: true,
+            msg: 'Cliente creado con éxito',
+        };
     }
 
     @Get()
@@ -30,24 +34,40 @@ export class ClientesController {
         return this.clientesService.findOne(id);
     }
 
-    @Patch(':id')
+    @Patch()
     @Roles('admin')
-    update(
-        @Param('id', ParseIntPipe) id: number,
+    async update(
         @Body() updateClienteDto: UpdateClienteDto,
     ) {
-        return this.clientesService.update(id, updateClienteDto);
+        if (!updateClienteDto.id_clientes) {
+            throw new BadRequestException('El ID del cliente es requerido en el body.');
+        }
+
+        await this.clientesService.update(updateClienteDto.id_clientes, updateClienteDto);
+        return {
+            ok: true,
+            msg: 'Cliente actualizado con éxito',
+        };
     }
+
 
     @Delete(':id')
     @Roles('admin')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.clientesService.remove(id);
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        await this.clientesService.remove(id);
+        return {
+            ok: true,
+            msg: 'Cliente eliminado con éxito',
+        };
     }
 
     @Delete()
     @Roles('admin')
-    removeMany(@Body() ids: number[]) {
-        return this.clientesService.removeMany(ids);
+    async removeMany(@Body() ids: number[]) {
+        await this.clientesService.removeMany(ids);
+        return {
+            ok: true,
+            msg: 'Clientes eliminados con éxito',
+        };
     }
 }
