@@ -38,6 +38,7 @@ import { AllExceptionsFilter } from './common/filters/prisma-exception.filter';
     },
   ],
 })
+
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer

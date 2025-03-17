@@ -1,4 +1,5 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+// src/auth/middleware/auth-refresh.middleware.ts
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +17,8 @@ declare global {
 
 @Injectable()
 export class AuthRefreshMiddleware implements NestMiddleware {
+    private readonly logger = new Logger(AuthRefreshMiddleware.name);
+
     constructor(
         private jwtService: JwtService,
         private configService: ConfigService,
@@ -32,9 +35,9 @@ export class AuthRefreshMiddleware implements NestMiddleware {
             return next();
         }
 
-        try {
-            // Verificar si el access token es válido
-            if (accessToken) {
+        // Caso 1: Tenemos access token - verificarlo
+        if (accessToken) {
+            try {
                 const payload = this.jwtService.verify(accessToken, {
                     secret: this.configService.get<string>('SECRET_KEY'),
                 });
@@ -48,44 +51,55 @@ export class AuthRefreshMiddleware implements NestMiddleware {
                     roles,
                 };
 
+                this.logger.debug(`Usuario autenticado con access token: ${payload.id_usuario}`);
                 return next();
+            } catch (error) {
+                this.logger.debug(`Access token inválido o expirado: ${error.message}`);
+                // Access token inválido - vamos a intentar usar el refresh token
+                // No retornamos - continuamos con la siguiente verificación
             }
-        } catch (error) {
-            // Error en access token, intentar renovar si hay refresh token
-            if (!refreshToken) {
-                return next();
-            }
+        }
 
+        // Caso 2: No tenemos access token válido, pero sí refresh token
+        if (refreshToken) {
             try {
                 // Intentar renovar token
                 const { accessToken: newAccessToken } = await this.authService.refreshToken(refreshToken);
+
+                // Obtener propiedades del token para setear cookies
+                const decoded = this.authService.decodeToken(newAccessToken);
+                const maxAge = 15 * 60 * 1000; // 1h o 15min
 
                 // Establecer nueva cookie
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: 'strict',
-                    maxAge: 15 * 60 * 1000,
+                    maxAge: maxAge,
+                    path: '/',
                 });
 
-                // Decodificar el nuevo token
-                const newPayload = this.authService.decodeToken(newAccessToken);
-
                 // Obtener roles actualizados
-                const roles = await this.rolesService.getUserRoles(newPayload.id_usuario);
+                const roles = await this.rolesService.getUserRoles(decoded.id_usuario);
 
                 // Asignar al user
                 req.user = {
-                    ...newPayload,
+                    ...decoded,
                     roles,
                 };
+                req.cookies.access_token = newAccessToken;
+                this.logger.debug(`Token refrescado exitosamente para usuario: ${decoded.id_usuario}`);
+                return next();
             } catch (refreshError) {
+                this.logger.error(`Error al refrescar token: ${refreshError.message}`);
+
                 // Error en refresh token, limpiar cookies
-                res.clearCookie('access_token');
-                res.clearCookie('refresh_token');
+                res.clearCookie('access_token', { path: '/' });
+                res.clearCookie('refresh_token', { path: '/' });
             }
         }
 
+        // No hay token válido, continuamos sin asignar usuario
         next();
     }
 }

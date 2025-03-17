@@ -1,12 +1,16 @@
 // src/documentos/documentos-base/documento-base.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateDocumentoBaseDto } from './dto/create-documento-base.dto';
+import { UpdateDocumentoBaseDto } from './dto/update-documento-base.dto';
+import { DocumentoBaseResponseDto } from './dto/documento-base-response.dto';
+import { PreviewDocumentoGuiasResponseDto } from './dto/preview-documento-guias.dto';
 
 @Injectable()
 export class DocumentoBaseService {
     constructor(private prisma: PrismaService) { }
 
-    async getDocumentosBase(page: number = 1, pageSize: number = 10) {
+    async getDocumentosBase(page: number = 1, pageSize: number = 10): Promise<{ data: DocumentoBaseResponseDto[], total: number }> {
         const offset = (page - 1) * pageSize;
         const limit = pageSize;
 
@@ -19,12 +23,12 @@ export class DocumentoBaseService {
         ]);
 
         return {
-            data: rows,
+            data: rows as DocumentoBaseResponseDto[],
             total: count,
         };
     }
 
-    async getDocumentoBase(id: number) {
+    async getDocumentoBase(id: number): Promise<DocumentoBaseResponseDto> {
         const documentoBase = await this.prisma.documentoBase.findUnique({
             where: { id },
         });
@@ -33,21 +37,22 @@ export class DocumentoBaseService {
             throw new NotFoundException(`Documento base con ID ${id} no encontrado`);
         }
 
-        return documentoBase;
+        return documentoBase as DocumentoBaseResponseDto;
     }
 
-    async createDocumentoBase(documentoBase: any) {
+    async createDocumentoBase(createDocumentoBaseDto: CreateDocumentoBaseDto): Promise<DocumentoBaseResponseDto> {
+        console.log(createDocumentoBaseDto);
         return this.prisma.documentoBase.create({
             data: {
-                ...documentoBase,
+                ...createDocumentoBaseDto,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
-        });
+        }) as Promise<DocumentoBaseResponseDto>;
     }
 
-    async updateDocumentoBase(documentoBase: any) {
-        const { id } = documentoBase;
+    async updateDocumentoBase(updateDocumentoBaseDto: UpdateDocumentoBaseDto): Promise<DocumentoBaseResponseDto> {
+        const { id } = updateDocumentoBaseDto;
         const documentoToUpdate = await this.prisma.documentoBase.findUnique({
             where: { id },
         });
@@ -56,7 +61,8 @@ export class DocumentoBaseService {
             throw new NotFoundException(`Documento base con ID ${id} no encontrado`);
         }
 
-        const { createdAt, ...updateData } = documentoBase;
+        // Excluir campos que no deberían actualizarse directamente
+        const { ...updateData } = updateDocumentoBaseDto;
 
         return this.prisma.documentoBase.update({
             where: { id },
@@ -64,10 +70,10 @@ export class DocumentoBaseService {
                 ...updateData,
                 updatedAt: new Date(),
             },
-        });
+        }) as Promise<DocumentoBaseResponseDto>;
     }
 
-    async deleteDocumentosBase(ids: number[]) {
+    async deleteDocumentosBase(ids: number[]): Promise<{ count: number }> {
         return this.prisma.documentoBase.deleteMany({
             where: {
                 id: {
@@ -101,16 +107,16 @@ export class DocumentoBaseService {
     }
 
     async crearDocumentoYGuias(
-        documentoBase: any,
+        documentoBaseDto: CreateDocumentoBaseDto,
         nGuias: number,
         secuencialInicial: number,
         prefijo: number,
-    ) {
+    ): Promise<DocumentoBaseResponseDto> {
         return this.prisma.$transaction(async (prisma) => {
             // Crear el documento base
             const documentoCreado = await prisma.documentoBase.create({
                 data: {
-                    ...documentoBase,
+                    ...documentoBaseDto,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -133,43 +139,48 @@ export class DocumentoBaseService {
             );
 
             await Promise.all(guiasPromises);
-            return documentoCreado;
+            return documentoCreado as DocumentoBaseResponseDto;
         });
     }
 
     async previewDocumentoBaseYGuias(
-        documentoBase: any,
+        documentoBaseDto: CreateDocumentoBaseDto,
         nGuias: number,
         secuencialInicial: number,
         prefijo: number,
-    ) {
-        const documentoCreado = {
-            ...documentoBase,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-
+    ): Promise<PreviewDocumentoGuiasResponseDto> {
         // Obtener último documento para simular ID
         const lastDocumento = await this.prisma.documentoBase.findFirst({
             orderBy: { id: 'desc' },
         });
 
-        documentoCreado.id = lastDocumento ? lastDocumento.id + 1 : 1;
+        const simulatedId = lastDocumento ? lastDocumento.id + 1 : 1;
 
         // Generar secuenciales
         const secuenciales = this.generarSecuenciales(secuencialInicial, nGuias);
 
+        // Simular documento base
+        const documentoCreado = {
+            ...documentoBaseDto,
+            id: simulatedId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+
         // Simular guías madre
         const guias = secuenciales.map((secuencial) => ({
-            id_documento_base: documentoCreado.id,
+            id_documento_base: simulatedId,
             prefijo,
             secuencial,
         }));
 
-        return { ...documentoCreado, guias_madre: guias };
+        return {
+            ...documentoCreado,
+            guias_madre: guias,
+        } as PreviewDocumentoGuiasResponseDto;
     }
 
-    async getGuiasBase(page: number = 1, pageSize: number = 10) {
+    async getGuiasBase(page: number = 1, pageSize: number = 10): Promise<{ data: DocumentoBaseResponseDto[], total: number }> {
         const offset = (page - 1) * pageSize;
         const limit = pageSize;
 
@@ -188,7 +199,7 @@ export class DocumentoBaseService {
         ]);
 
         return {
-            data: rows,
+            data: rows as DocumentoBaseResponseDto[],
             total: count,
         };
     }
