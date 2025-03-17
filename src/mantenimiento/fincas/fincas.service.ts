@@ -24,6 +24,9 @@ export class FincasService {
                     },
                 },
             },
+            orderBy: {
+                nombre_finca: 'asc',
+            },
         });
     }
 

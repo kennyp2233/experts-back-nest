@@ -27,24 +27,45 @@ export class FincasController {
     @Post()
     @Roles('admin')
     create(@Body() fincaData: any) {
-        return this.fincasService.create(fincaData);
+        const finca = this.fincasService.create(fincaData);
+        return {
+            ok: true,
+            msg: 'Finca creada',
+            finca
+        };
     }
 
     @Put()
     @Roles('admin')
     update(@Body() fincaData: any) {
-        return this.fincasService.update(fincaData);
+        const finca = this.fincasService.update(fincaData);
+        return {
+            ok: true,
+            msg: 'Finca actualizada',
+            finca
+        };
+
     }
 
     @Delete(':id')
     @Roles('admin')
     remove(@Param('id', ParseIntPipe) id: number) {
-        return this.fincasService.remove(id);
+        const finca = this.fincasService.remove(id);
+        return {
+            ok: true,
+            msg: 'Finca eliminada',
+            finca
+        };
     }
 
     @Delete()
     @Roles('admin')
     removeMany(@Body() ids: number[]) {
-        return this.fincasService.removeMany(ids);
+        const finca = this.fincasService.removeMany(ids);
+        return {
+            ok: true,
+            msg: 'Fincas eliminadas',
+            finca
+        };
     }
 }

@@ -30,6 +30,9 @@ export class ConsignatariosService {
                 embarcador: true,
                 cliente: true,
             },
+            orderBy: {
+                nombre_consignatario: 'asc',
+            },
         });
 
         // Mezclar todos los atributos en un solo objeto para mantener compatibilidad
