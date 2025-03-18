@@ -1,17 +1,21 @@
-// src/documentos/documentos-base/guia-madre/guia-madre.service.ts
+// src/documentos/guia-madre/guia-madre.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { CreateGuiaMadreDto } from './dto/create-guia-madre.dto';
+import { UpdateGuiaMadreDto } from './dto/update-guia-madre.dto';
+import { GuiaMadreDto } from './dto/guia-madre.dto';
+import { PrestarGuiaMadreDto } from './dto/prestar-guia-madre.dto';
 
 @Injectable()
 export class GuiaMadreService {
     constructor(private prisma: PrismaService) { }
 
-    async getGuiasMadre() {
+    async getGuiasMadre(): Promise<GuiaMadreDto[]> {
         return this.prisma.guiaMadre.findMany();
     }
 
-    async getGuiaMadre(id: number) {
+    async getGuiaMadre(id: number): Promise<GuiaMadreDto> {
         const guiaMadre = await this.prisma.guiaMadre.findUnique({
             where: { id },
         });
@@ -23,7 +27,7 @@ export class GuiaMadreService {
         return guiaMadre;
     }
 
-    async getGuiaMadreByAirlineId(id: number) {
+    async getGuiaMadreByAirlineId(id: number): Promise<any> {
         // Esta consulta es más compleja y requiere raw SQL en Prisma
         const rawQuery = Prisma.sql`
       SELECT gm.* FROM "GuiaMadre" gm
@@ -39,18 +43,18 @@ export class GuiaMadreService {
         return this.prisma.$queryRaw(rawQuery);
     }
 
-    async createGuiaMadre(guiaMadre: any) {
+    async createGuiaMadre(createGuiaMadreDto: CreateGuiaMadreDto): Promise<GuiaMadreDto> {
         return this.prisma.guiaMadre.create({
             data: {
-                ...guiaMadre,
+                ...createGuiaMadreDto,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
         });
     }
 
-    async updateGuiaMadre(guiaMadre: any) {
-        const { id } = guiaMadre;
+    async updateGuiaMadre(updateGuiaMadreDto: UpdateGuiaMadreDto): Promise<GuiaMadreDto> {
+        const { id } = updateGuiaMadreDto;
         const guiaToUpdate = await this.prisma.guiaMadre.findUnique({
             where: { id },
         });
@@ -62,13 +66,13 @@ export class GuiaMadreService {
         return this.prisma.guiaMadre.update({
             where: { id },
             data: {
-                ...guiaMadre,
+                ...updateGuiaMadreDto,
                 updatedAt: new Date(),
             },
         });
     }
 
-    async marcarComoPrestada(id: number, observaciones?: string) {
+    async marcarComoPrestada(id: number, prestadaDto?: PrestarGuiaMadreDto): Promise<GuiaMadreDto> {
         const guiaMadre = await this.prisma.guiaMadre.findUnique({
             where: { id },
         });
@@ -85,7 +89,7 @@ export class GuiaMadreService {
             where: { id },
             data: {
                 prestamo: true,
-                observaciones: observaciones || '',
+                observaciones: prestadaDto?.observaciones || '',
                 fecha_prestamo: new Date().toISOString(),
             },
         });
@@ -95,7 +99,7 @@ export class GuiaMadreService {
         });
     }
 
-    async marcarComoDevuelta(id: number) {
+    async marcarComoDevuelta(id: number): Promise<GuiaMadreDto> {
         const guiaMadre = await this.prisma.guiaMadre.findUnique({
             where: { id },
         });

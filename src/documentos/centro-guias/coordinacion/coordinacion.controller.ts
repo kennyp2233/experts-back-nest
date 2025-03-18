@@ -4,6 +4,9 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CoordinacionService } from './coordinacion.service';
+import { DocumentoCoordinacionDto } from './dto/documento-coordinacion.dto';
+import { CreateDocumentoCoordinacionDto } from './dto/create-documento-coordinacion.dto';
+import { UpdateDocumentoCoordinacionDto } from './dto/update-documento-coordinacion.dto';
 
 @Controller('asignacion')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,14 +23,14 @@ export class CoordinacionController {
 
     @Post()
     @Roles('admin')
-    async create(@Body() documentoCoordinacion: any) {
+    async create(@Body() documentoCoordinacion: CreateDocumentoCoordinacionDto) {
         const documento = await this.coordinacionService.createDocumentoCoordinacion(documentoCoordinacion);
         return documento;
     }
 
     @Put(':id')
     @Roles('admin')
-    async update(@Param('id') id: string, @Body() documentoCoordinacion: any) {
+    async update(@Param('id') id: string, @Body() documentoCoordinacion: UpdateDocumentoCoordinacionDto) {
         const documento = await this.coordinacionService.updateDocumentoCoordinacion(
             Number(id),
             documentoCoordinacion,

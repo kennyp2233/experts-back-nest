@@ -74,7 +74,11 @@ export class CoordinacionService {
 
             // Crear documento de coordinación
             const documento = await prisma.documentoCoordinacion.create({
-                data: documentoCoordinacion,
+                data: {
+                    ...documentoCoordinacion,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
             });
 
             // Asegurar inclusión del consignatario en clientes
@@ -131,7 +135,11 @@ export class CoordinacionService {
             // Actualizar documento
             await prisma.documentoCoordinacion.update({
                 where: { id },
-                data: documentoCoordinacion,
+                data: {
+                    ...documentoCoordinacion,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }
             });
 
             // Verificar consignatario
