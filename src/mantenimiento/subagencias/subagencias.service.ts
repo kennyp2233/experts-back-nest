@@ -9,7 +9,11 @@ export class SubAgenciasService {
     constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        return this.prisma.subAgencia.findMany();
+        return this.prisma.subAgencia.findMany({
+            orderBy: {
+                nombre: 'asc'
+            }
+        });
     }
 
     async findOne(id: number) {

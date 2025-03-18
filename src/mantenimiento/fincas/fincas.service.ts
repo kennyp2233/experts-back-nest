@@ -1,5 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateFincaDto } from './dto/create-finca.dto';
+import { UpdateFincaDto } from './dto/update-finca.dto';
+import { FincaDto } from './dto/finca.dto';
 
 @Injectable()
 export class FincasService {
@@ -55,12 +58,12 @@ export class FincasService {
         return finca;
     }
 
-    async create(fincaData: any) {
+    async create(createFincaDto: CreateFincaDto) {
         return this.prisma.$transaction(async (prisma) => {
             try {
-                const fincaBase = this.extraerFincaData(fincaData);
-                const choferesData = this.extraerFincaChoferesData(fincaData);
-                const productosData = this.extraerFincaProductosData(fincaData);
+                const fincaBase = this.extraerFincaData(createFincaDto);
+                const choferesData = createFincaDto.fincas_choferes || [];
+                const productosData = createFincaDto.fincas_productos || [];
 
                 // Crear la finca principal
                 const newFinca = await prisma.finca.create({
@@ -68,7 +71,7 @@ export class FincasService {
                 });
 
                 // Crear relaciones con choferes
-                if (choferesData && choferesData.length > 0) {
+                if (choferesData.length > 0) {
                     await prisma.fincaChofer.createMany({
                         data: choferesData.map(chofer => ({
                             id_finca: newFinca.id_finca,
@@ -78,7 +81,7 @@ export class FincasService {
                 }
 
                 // Crear relaciones con productos
-                if (productosData && productosData.length > 0) {
+                if (productosData.length > 0) {
                     await prisma.fincaProducto.createMany({
                         data: productosData.map(producto => ({
                             id_finca: newFinca.id_finca,
@@ -94,8 +97,8 @@ export class FincasService {
         });
     }
 
-    async update(fincaData: any) {
-        const id = fincaData.id_finca;
+    async update(updateFincaDto: UpdateFincaDto) {
+        const id = updateFincaDto.id_finca;
         if (!id) {
             throw new NotFoundException('ID de finca no proporcionado');
         }
@@ -111,9 +114,9 @@ export class FincasService {
                     throw new NotFoundException(`Finca con ID ${id} no encontrada`);
                 }
 
-                const fincaBase = this.extraerFincaData(fincaData);
-                const choferesData = this.extraerFincaChoferesData(fincaData);
-                const productosData = this.extraerFincaProductosData(fincaData);
+                const fincaBase = this.extraerFincaData(updateFincaDto);
+                const choferesData = updateFincaDto.fincas_choferes || [];
+                const productosData = updateFincaDto.fincas_productos || [];
 
                 // Actualizar la finca principal
                 await prisma.finca.update({
@@ -131,7 +134,7 @@ export class FincasService {
                 });
 
                 // Crear nuevas relaciones con choferes
-                if (choferesData && choferesData.length > 0) {
+                if (choferesData.length > 0) {
                     await prisma.fincaChofer.createMany({
                         data: choferesData.map(chofer => ({
                             id_finca: id,
@@ -141,7 +144,7 @@ export class FincasService {
                 }
 
                 // Crear nuevas relaciones con productos
-                if (productosData && productosData.length > 0) {
+                if (productosData.length > 0) {
                     await prisma.fincaProducto.createMany({
                         data: productosData.map(producto => ({
                             id_finca: id,
@@ -232,44 +235,28 @@ export class FincasService {
         });
     }
 
-    // Funciones de extracción para mantener compatibilidad con el código existente
-    private extraerFincaData(data: any) {
+    // Extraer datos para crear una finca
+    private extraerFincaData(data: CreateFincaDto | UpdateFincaDto) {
         return {
-            nombre_finca: data?.nombre_finca,
-            codigo_finca: data?.codigo_finca,
-            ruc_finca: data?.ruc_finca,
-            id_tipo_documento: data?.id_tipo_documento?.id_tipo_documento,
-            genera_guias_certificadas: data?.genera_guias_certificadas,
-            i_general_telefono: data?.i_general_telefono,
-            i_general_email: data?.i_general_email,
-            i_general_ciudad: data?.i_general_ciudad,
-            i_general_provincia: data?.i_general_provincia,
-            i_general_pais: data?.i_general_pais,
-            i_general_cod_sesa: data?.i_general_cod_sesa,
-            i_general_cod_pais: data?.i_general_cod_pais,
-            dim_x: data?.dim_x,
-            dim_y: data?.dim_y,
-            dim_z: data?.dim_z,
-            excel_plantilla: data?.excel_plantilla,
-            a_nombre: data?.a_nombre,
-            a_codigo: data?.a_codigo,
-            a_direccion: data?.a_direccion,
+            nombre_finca: data.nombre_finca,
+            codigo_finca: data.codigo_finca,
+            ruc_finca: data.ruc_finca,
+            id_tipo_documento: data.id_tipo_documento,
+            genera_guias_certificadas: data.genera_guias_certificadas,
+            i_general_telefono: data.i_general_telefono,
+            i_general_email: data.i_general_email,
+            i_general_ciudad: data.i_general_ciudad,
+            i_general_provincia: data.i_general_provincia,
+            i_general_pais: data.i_general_pais,
+            i_general_cod_sesa: data.i_general_cod_sesa,
+            i_general_cod_pais: data.i_general_cod_pais,
+            dim_x: data.dim_x,
+            dim_y: data.dim_y,
+            dim_z: data.dim_z,
+            excel_plantilla: data.excel_plantilla,
+            a_nombre: data.a_nombre,
+            a_codigo: data.a_codigo,
+            a_direccion: data.a_direccion,
         };
-    }
-
-    private extraerFincaChoferesData(data: any) {
-        return data?.fincas_choferes
-            ?.map((chofer: any) => ({
-                id_finca: data?.id_finca,
-                id_chofer: chofer?.id_chofer,
-            })) || [];
-    }
-
-    private extraerFincaProductosData(data: any) {
-        return data?.fincas_productos
-            ?.map((producto: any) => ({
-                id_finca: data?.id_finca,
-                id_producto: producto?.id_producto,
-            })) || [];
     }
 }

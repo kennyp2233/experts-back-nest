@@ -3,6 +3,8 @@ import { FincasService } from './fincas.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CreateFincaDto } from './dto/create-finca.dto';
+import { UpdateFincaDto } from './dto/update-finca.dto';
 
 @Controller('fincas')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,8 +28,8 @@ export class FincasController {
 
     @Post()
     @Roles('admin')
-    create(@Body() fincaData: any) {
-        const finca = this.fincasService.create(fincaData);
+    async create(@Body() createFincaDto: CreateFincaDto) {
+        const finca = await this.fincasService.create(createFincaDto);
         return {
             ok: true,
             msg: 'Finca creada',
@@ -37,35 +39,32 @@ export class FincasController {
 
     @Put()
     @Roles('admin')
-    update(@Body() fincaData: any) {
-        const finca = this.fincasService.update(fincaData);
+    async update(@Body() updateFincaDto: UpdateFincaDto) {
+        const finca = await this.fincasService.update(updateFincaDto);
         return {
             ok: true,
             msg: 'Finca actualizada',
             finca
         };
-
     }
 
     @Delete(':id')
     @Roles('admin')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        const finca = this.fincasService.remove(id);
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        await this.fincasService.remove(id);
         return {
             ok: true,
-            msg: 'Finca eliminada',
-            finca
+            msg: 'Finca eliminada'
         };
     }
 
     @Delete()
     @Roles('admin')
-    removeMany(@Body() ids: number[]) {
-        const finca = this.fincasService.removeMany(ids);
+    async removeMany(@Body() ids: number[]) {
+        await this.fincasService.removeMany(ids);
         return {
             ok: true,
-            msg: 'Fincas eliminadas',
-            finca
+            msg: 'Fincas eliminadas'
         };
     }
 }
