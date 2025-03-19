@@ -33,10 +33,59 @@ export class CoordinacionService {
             this.prisma.documentoCoordinacion.count(),
         ]);
 
+        // Procesar los resultados para incluir información completa de los participantes
+        const documentosConParticipantes = await Promise.all(rows.map(async (doc) => {
+            const participantes = await this.getParticipantesByDocumento(doc.id);
+            return {
+                ...doc,
+                participantes
+            };
+        }));
+
         return {
-            data: rows,
+            data: documentosConParticipantes,
             total: count,
         };
+    }
+
+    async getParticipantesByDocumento(id_coordinacion: number) {
+        const participantes = await this.prisma.coordinacionClientes.findMany({
+            where: { id_coordinacion }
+        });
+
+        const resultado = [];
+
+        for (const p of participantes) {
+            if (p.tipo === 'CLIENTE') {
+                const cliente = await this.prisma.cliente.findUnique({
+                    where: { id_clientes: p.id_entidad }
+                });
+
+                if (cliente) {
+                    resultado.push({
+                        tipo: p.tipo,
+                        id: p.id_entidad,
+                        nombre: cliente.nombre,
+                        detalles: cliente
+                    });
+                }
+            } else if (p.tipo === 'CONSIGNATARIO') {
+                const consignatario = await this.prisma.consignatario.findUnique({
+                    where: { id_consignatario: p.id_entidad }
+                });
+
+                if (consignatario) {
+                    resultado.push({
+                        tipo: p.tipo,
+                        id: p.id_entidad,
+                        nombre: consignatario.nombre_consignatario,
+                        detalles: consignatario
+                    });
+                }
+            }
+        }
+
+        return resultado;
     }
 
     async createDocumentoCoordinacion(documentoCoordinacion: any) {
@@ -81,20 +130,26 @@ export class CoordinacionService {
                 },
             });
 
-            // Asegurar inclusión del consignatario en clientes
-            const clientesUnicos = new Set([...id_clientes, consignatario.id_consignatario]);
+            // Crear relaciones - Incluir consignatario automáticamente
+            const relacionesParticipantes = [
+                // Agregar el consignatario
+                {
+                    id_coordinacion: documento.id,
+                    tipo: "CONSIGNATARIO",
+                    id_entidad: documentoCoordinacion.id_consignatario
+                },
+                // Agregar los clientes
+                ...id_clientes.map(id_cliente => ({
+                    id_coordinacion: documento.id,
+                    tipo: "CLIENTE",
+                    id_entidad: Number(id_cliente)
+                }))
+            ];
 
-            // Crear relaciones con clientes
-            const clientesPromises = Array.from(clientesUnicos).map(id_cliente =>
-                prisma.coordinacionClientes.create({
-                    data: {
-                        id_coordinacion: documento.id,
-                        id_cliente: Number(id_cliente),
-                    },
-                })
-            );
+            await prisma.coordinacionClientes.createMany({
+                data: relacionesParticipantes
+            });
 
-            await Promise.all(clientesPromises);
             return documento;
         });
     }
@@ -137,7 +192,6 @@ export class CoordinacionService {
                 where: { id },
                 data: {
                     ...documentoCoordinacion,
-                    createdAt: new Date(),
                     updatedAt: new Date(),
                 }
             });
@@ -151,41 +205,30 @@ export class CoordinacionService {
                 throw new Error('El consignatario asociado a la Guía Madre no existe.');
             }
 
-            // Obtener clientes actuales
-            const clientesActuales = await prisma.coordinacionClientes.findMany({
-                where: { id_coordinacion: id },
+            // Eliminar todas las relaciones existentes
+            await prisma.coordinacionClientes.deleteMany({
+                where: { id_coordinacion: id }
             });
 
-            const clientesActualesIds = clientesActuales.map(c => c.id_cliente);
-
-            // Actualizar clientes
-            const nuevosClientes = new Set([...id_clientes, consignatario.id_consignatario]);
-            const clientesAEliminar = clientesActualesIds.filter(id_cliente =>
-                !nuevosClientes.has(id_cliente));
-            const clientesAAgregar = Array.from(nuevosClientes).filter(id_cliente =>
-                !clientesActualesIds.includes(Number(id_cliente)));
-
-            // Eliminar relaciones obsoletas
-            if (clientesAEliminar.length > 0) {
-                await prisma.coordinacionClientes.deleteMany({
-                    where: {
-                        id_coordinacion: id,
-                        id_cliente: { in: clientesAEliminar },
-                    },
-                });
-            }
-
-            // Crear nuevas relaciones
-            if (clientesAAgregar.length > 0) {
-                const clientesToAdd = clientesAAgregar.map(id_cliente => ({
+            // Crear nuevas relaciones - incluir consignatario
+            const relacionesParticipantes = [
+                // Agregar el consignatario
+                {
                     id_coordinacion: id,
-                    id_cliente: Number(id_cliente),
-                }));
+                    tipo: "CONSIGNATARIO",
+                    id_entidad: documentoCoordinacion.id_consignatario
+                },
+                // Agregar los clientes
+                ...id_clientes.map(id_cliente => ({
+                    id_coordinacion: id,
+                    tipo: "CLIENTE",
+                    id_entidad: Number(id_cliente)
+                }))
+            ];
 
-                await prisma.coordinacionClientes.createMany({
-                    data: clientesToAdd,
-                });
-            }
+            await prisma.coordinacionClientes.createMany({
+                data: relacionesParticipantes
+            });
 
             return documento;
         });
