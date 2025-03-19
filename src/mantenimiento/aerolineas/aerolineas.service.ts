@@ -178,6 +178,35 @@ export class AerolineasService {
         return aerolineas.map(aerolinea => this.formatAerolineaCompleta(aerolinea));
     }
 
+    async findOneComplete(id: number) {
+        const aerolinea = await this.prisma.aerolinea.findUnique({
+            where: { id_aerolinea: id },
+            include: {
+                aerolineas_plantilla: {
+                    include: {
+                        multiplicador1: true,
+                        multiplicador2: true,
+                        multiplicador3: true,
+                    },
+                },
+                modo: true,
+                origen1: true,
+                destino1: true,
+                via1: true,
+                destino2: true,
+                via2: true,
+                destino3: true,
+                via3: true,
+            },
+        });
+
+        if (!aerolinea) {
+            throw new NotFoundException(`Aerolínea con ID ${id} no encontrada`);
+        }
+
+        return this.formatAerolineaCompleta(aerolinea);
+    }
+
     async removeMany(ids: number[]) {
         return this.removeCompleta(ids);
     }

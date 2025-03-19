@@ -18,6 +18,9 @@ export class GuiaMadreService {
     async getGuiaMadre(id: number): Promise<GuiaMadreDto> {
         const guiaMadre = await this.prisma.guiaMadre.findUnique({
             where: { id },
+            include: {
+                documento_base: true
+            },
         });
 
         if (!guiaMadre) {

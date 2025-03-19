@@ -30,6 +30,19 @@ export class AerolineasController {
         return data;
     }
 
+    @Get(':id')
+    async findOne(@Param('id') id: string) {
+        const data = await this.aerolineasService.findOne(+id);
+        return data;
+    }
+
+
+    @Get('joinAll/:id')
+    async findOneComplete(@Param('id') id: string) {
+        const data = await this.aerolineasService.findOneComplete(+id);
+        return data;
+    }
+
     @Post()
     async create(@Body() createAerolineaDto: CreateAerolineaDto): Promise<ApiResponse> {
         const data = await this.aerolineasService.create(createAerolineaDto);

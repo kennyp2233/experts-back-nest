@@ -101,22 +101,22 @@ model AerolineasPlantilla {
   otros_abrv                  String?
   aux1_abrv                   String?
   aux2_abrv                   String?
-  costo_guia_valor            Float?
-  combustible_valor           Float?
-  seguridad_valor             Float?
-  aux_calculo_valor           Float?
-  otros_valor                 Float?
-  aux1_valor                  Float?
-  aux2_valor                  Float?
+  costo_guia_valor            Float?  @default(0)
+  combustible_valor           Float?  @default(0)
+  seguridad_valor             Float?  @default(0)
+  aux_calculo_valor           Float?  @default(0)
+  otros_valor                 Float?  @default(0)
+  aux1_valor                  Float?  @default(0)
+  aux2_valor                  Float?  @default(0)
   plantilla_guia_madre        String?
   plantilla_formato_aerolinea String?
   plantilla_reservas          String?
-  tarifa_rate                 Float?
-  pca                         Float?
-  combustible_mult            Int?
-  seguridad_mult              Int?
-  aux_calc_mult               Int?
-  iva_valor                   Float?
+  tarifa_rate                 Float?  @default(0)
+  pca                         Float?  @default(0)
+  combustible_mult            Int?    @default(0)
+  seguridad_mult              Int?    @default(0)
+  aux_calc_mult               Int?    @default(0)
+  iva_valor                   Float?  @default(0)
 
   // Relations
   aerolinea      Aerolinea                       @relation(fields: [id_aerolinea], references: [id_aerolinea], onDelete: Cascade)
