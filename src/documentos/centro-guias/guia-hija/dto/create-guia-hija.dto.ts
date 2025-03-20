@@ -1,6 +1,5 @@
-
 // src/documentos/centro-guias/guia-hija/dto/create-guia-hija.dto.ts
-import { IsInt, IsString } from 'class-validator';
+import { IsInt, IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateGuiaHijaDto {
     @IsInt()
@@ -12,6 +11,10 @@ export class CreateGuiaHijaDto {
     @IsInt()
     id_finca: number;
 
+    @IsOptional()
+    @IsInt()
+    id_producto?: number;
+
     @IsString()
     numero_guia_hija: string;
 
@@ -20,4 +23,20 @@ export class CreateGuiaHijaDto {
 
     @IsInt()
     secuencial: number;
+
+    @IsOptional()
+    @IsInt()
+    fulls?: number;
+
+    @IsOptional()
+    @IsInt()
+    pcs?: number;
+
+    @IsOptional()
+    @IsNumber()
+    kgs?: number;
+
+    @IsOptional()
+    @IsInt()
+    stems?: number;
 }

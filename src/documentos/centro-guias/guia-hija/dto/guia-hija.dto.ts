@@ -1,5 +1,5 @@
 // src/documentos/centro-guias/guia-hija/dto/guia-hija.dto.ts
-import { IsDate, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GuiaHijaDto {
@@ -15,6 +15,10 @@ export class GuiaHijaDto {
     @IsInt()
     id_finca: number;
 
+    @IsOptional()
+    @IsInt()
+    id_producto?: number;
+
     @IsString()
     numero_guia_hija: string;
 
@@ -25,6 +29,22 @@ export class GuiaHijaDto {
     secuencial: number;
 
     @IsOptional()
+    @IsInt()
+    fulls?: number;
+
+    @IsOptional()
+    @IsInt()
+    pcs?: number;
+
+    @IsOptional()
+    @IsNumber()
+    kgs?: number;
+
+    @IsOptional()
+    @IsInt()
+    stems?: number;
+
+    @IsOptional()
     @IsDate()
     @Type(() => Date)
     createdAt?: Date;
@@ -33,6 +53,10 @@ export class GuiaHijaDto {
     @IsDate()
     @Type(() => Date)
     updatedAt?: Date;
+
+    // Relaciones potencialmente incluidas
+    producto?: any;
+    finca?: any;
+    guia_madre?: any;
+    documento_coordinacion?: any;
 }
-
-

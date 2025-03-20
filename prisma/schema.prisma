@@ -441,6 +441,7 @@ model Producto {
   mipro                  ProductosMiPro[]
   fincas_productos       FincaProducto[]
   documentosCoordinacion DocumentoCoordinacion[]
+  guiash                 GuiaHija[]
 }
 
 model ProductosAranceles {
@@ -736,9 +737,14 @@ model GuiaHija {
   id_documento_coordinacion Int
   id_guia_madre             Int
   id_finca                  Int
+  id_producto               Int? // Relación directa con el producto
   numero_guia_hija          String
   anio                      Int
   secuencial                Int
+  fulls                     Int?      @default(0) // Cantidad de fulls
+  pcs                       Int?      @default(0) // Número de piezas
+  kgs                       Float?    @default(0) // Peso en kilogramos
+  stems                     Int?      @default(0) // Cantidad de tallos
   createdAt                 DateTime?
   updatedAt                 DateTime?
 
@@ -746,4 +752,5 @@ model GuiaHija {
   documento_coordinacion DocumentoCoordinacion @relation(fields: [id_documento_coordinacion], references: [id])
   guia_madre             GuiaMadre             @relation(fields: [id_guia_madre], references: [id])
   finca                  Finca                 @relation(fields: [id_finca], references: [id_finca])
+  producto               Producto?             @relation(fields: [id_producto], references: [id_producto])
 }

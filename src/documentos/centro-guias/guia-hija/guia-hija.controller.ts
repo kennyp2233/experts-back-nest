@@ -1,9 +1,11 @@
 // src/documentos/centro-guias/guia-hija/guia-hija.controller.ts
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { GuiaHijaService } from './guia-hija.service';
+import { AsignarGuiaHijaDto } from './dto/asignar-guia-hija.dto';
+import { UpdateGuiaHijaDto } from './dto/update-guia-hija.dto';
 
 @Controller('guia_hija')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -64,15 +66,26 @@ export class GuiaHijaController {
 
     @Post('asignar')
     @Roles('admin')
-    async asignar(@Body() data: { id_documento_coordinacion: number; id_finca: number }) {
+    async asignar(@Body() data: AsignarGuiaHijaDto) {
         const { id_documento_coordinacion, id_finca } = data;
-        const guiaHija = await this.guiaHijaService.asignarGuiaHija(id_documento_coordinacion, id_finca);
+        const guiaHija = await this.guiaHijaService.asignarGuiaHija(id_documento_coordinacion, id_finca, data);
         return guiaHija;
+    }
+
+    @Put(':id')
+    @Roles('admin')
+    async update(@Param('id') id: string, @Body() updateGuiaHijaDto: UpdateGuiaHijaDto) {
+        const guiaHija = await this.guiaHijaService.updateGuiaHija(Number(id), updateGuiaHijaDto);
+        return {
+            ok: true,
+            msg: 'Guía hija actualizada correctamente',
+            data: guiaHija
+        };
     }
 
     @Post('prevalidar')
     @Roles('admin')
-    async prevalidar(@Body() asignaciones: { id_documento_coordinacion: number; id_finca: number }[]) {
+    async prevalidar(@Body() asignaciones: AsignarGuiaHijaDto[]) {
         return this.guiaHijaService.prevalidarAsignacionGuiasHijas(asignaciones);
     }
 
