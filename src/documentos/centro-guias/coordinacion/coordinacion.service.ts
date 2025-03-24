@@ -1,6 +1,7 @@
 // src/documentos/centro-guias/coordinacion/coordinacion.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { CreateDocumentoCoordinacionDto } from './dto/create-documento-coordinacion.dto';
 
 @Injectable()
 export class CoordinacionService {
@@ -88,7 +89,7 @@ export class CoordinacionService {
         return resultado;
     }
 
-    async createDocumentoCoordinacion(documentoCoordinacion: any) {
+    async createDocumentoCoordinacion(documentoCoordinacion: CreateDocumentoCoordinacionDto) {
         const { id_guia_madre, id_clientes = [] } = documentoCoordinacion;
 
         return this.prisma.$transaction(async (prisma) => {
@@ -252,17 +253,9 @@ export class CoordinacionService {
 
     async getAvailableAerolineas() {
         return this.prisma.aerolinea.findMany({
-            include: {
+            where: {
                 documentos_base: {
-                    include: {
-                        guias_madre: {
-                            where: {
-                                prestamo: false,
-                                devolucion: false,
-                            },
-                        },
-                    },
-                    where: {
+                    some: {
                         guias_madre: {
                             some: {
                                 prestamo: false,
