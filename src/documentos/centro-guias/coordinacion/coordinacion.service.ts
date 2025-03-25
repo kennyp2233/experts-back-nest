@@ -27,8 +27,21 @@ export class CoordinacionService {
                     destino_awb: true,
                     destino_final_docs: true,
                     producto: true,
-                    consignatario: true,
+                    consignatario: {
+                        include: {
+                            cliente: true,
+                        }
+                    },
                     coordinacion_clientes: true,
+                    guia_madre: {
+                        include: {
+                            documento_base: {
+                                include: {
+                                    aerolinea: true
+                                }
+                            }
+                        }
+                    }
                 },
             }),
             this.prisma.documentoCoordinacion.count(),
@@ -49,9 +62,55 @@ export class CoordinacionService {
         };
     }
 
+    async getDocumentoCoordinacion(id: number) {
+        const documento = await this.prisma.documentoCoordinacion.findUnique({
+            where: { id },
+            include: {
+                aerolinea_by1: true,
+                aerolinea_by2: true,
+                aerolinea_by3: true,
+                agencia_iata: true,
+                origen_from1: true,
+                destino_to1: true,
+                destino_to2: true,
+                destino_to3: true,
+                destino_awb: true,
+                destino_final_docs: true,
+                producto: true,
+                consignatario: {
+                    include: {
+                        cliente: true,
+                    }
+                },
+                coordinacion_clientes: true,
+                guia_madre: {
+                    include: {
+                        documento_base: {
+                            include: {
+                                aerolinea: true
+                            }
+                        }
+                    }
+                }
+            },
+        });
+
+        if (!documento) {
+            throw new NotFoundException(`Documento de coordinación con ID ${id} no encontrado`);
+        }
+
+        // Obtener participantes
+        const participantes = await this.getParticipantesByDocumento(id);
+
+        return {
+            ...documento,
+            participantes
+        };
+    }
+
     async getParticipantesByDocumento(id_coordinacion: number) {
         const participantes = await this.prisma.coordinacionClientes.findMany({
-            where: { id_coordinacion }
+            where: { id_coordinacion },
         });
 
         const resultado = [];

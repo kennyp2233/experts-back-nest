@@ -21,6 +21,19 @@ export class CoordinacionController {
         return this.coordinacionService.getDocumentosCoordinacion(pageNum, limitNum);
     }
 
+    @Get('aerolineas')
+    async getAerolineas() {
+        const aerolineas = await this.coordinacionService.getAvailableAerolineas();
+        return aerolineas;
+    }
+
+
+    @Get(':id')
+    async findOne(@Param('id') id: string) {
+        const documento = await this.coordinacionService.getDocumentoCoordinacion(+id);
+        return documento;
+    }
+
     @Post()
     @Roles('admin')
     async create(@Body() documentoCoordinacion: CreateDocumentoCoordinacionDto) {
@@ -45,9 +58,5 @@ export class CoordinacionController {
         return { message: 'Documento de coordinación eliminado', documento };
     }
 
-    @Get('aerolineas')
-    async getAerolineas() {
-        const aerolineas = await this.coordinacionService.getAvailableAerolineas();
-        return aerolineas;
-    }
+
 }
